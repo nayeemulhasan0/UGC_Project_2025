@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
 
     <!-- Chosen Palette: Soothing Neutrals -->
-    <!-- Application Structure Plan: The application is structured as a narrative journey to guide the user from the general problem to the specific solution and its impact. It begins with 'The Core Challenge' to establish the "why." It then introduces 'The Three Pillars' of the solution at a high level. The 'Interactive Deep Dive' allows users to explore each pillar (Modeling, Behavior, Control) with dynamic visualizations and LLM-powered explanations, including a new Behavioral Insight Generator. This is followed by 'The 4-Phase Methodology,' a visual flowchart of the research process, and concludes with the 'Expected Impact,' which includes both a chart and an LLM-powered policy scenario generator, connecting the research to tangible outcomes for Bangladesh. This user-centric flow prioritizes understanding and exploration over the rigid structure of the source report. -->
+    <!-- Application Structure Plan: The application is structured as a narrative journey to guide the user from the general problem to the specific solution and its impact. It begins with 'The Core Challenge' to establish the "why." It then introduces 'The Three Pillars' of the solution at a high level. The 'Interactive Deep Dive' allows users to explore each pillar (Modeling, Behavior, Control) with dynamic visualizations and LLM-powered explanations, including a new Behavioral Insight Generator. This is followed by 'The 4-Phase Methodology,' a visual flowchart of the research process, and concludes with the 'Expected Impact,' which includes a chart, connecting the research to tangible outcomes for Bangladesh. This user-centric flow prioritizes understanding and exploration over the rigid structure of the source report. -->
     <!-- Visualization & Content Choices: 
         - Core Challenge: 3-column card layout (HTML/CSS) to quickly inform users of the key problems with traditional models.
         - Three Pillars: Icon-and-text layout (HTML/CSS/Unicode) to organize the three core concepts of the project.
@@ -22,8 +22,7 @@
         - Sensitivity Analysis: A Radar Chart (Chart.js) to compare the influence of multiple parameters on a single outcome. Justification: A standard and effective way to present multi-variable sensitivity.
         - Cost-Effectiveness: A Horizontal Bar Chart (Chart.js) to compare and rank different policy strategies. Justification: Clear and effective for comparing the efficiency of interventions.
         - LLM Explain Concept: Button triggers modal with LLM-generated text explanation. Interaction: Click button, read explanation, close modal. Justification: Provides on-demand simplification for complex topics.
-        - LLM Policy Scenario Generator: Textarea for input, button to trigger LLM, text output. Interaction: User inputs scenario, clicks button, reads generated policy advice. Justification: Demonstrates practical application of research principles.
-        - NEW: LLM Behavioral Insight Generator: Textarea for input, button to trigger LLM, text output. Interaction: User inputs behavioral challenge, clicks button, reads generated insights. Justification: Directly supports the "behavior-aware" aspect of the project by providing psychological insights.
+        - LLM Behavioral Insight Generator: Textarea for input, button to trigger LLM, text output. Interaction: User inputs behavioral challenge, clicks button, reads generated insights. Justification: Directly supports the "behavior-aware" aspect of the project by providing psychological insights.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 
@@ -328,16 +327,6 @@
                     <p class="text-sm text-gray-600 mt-2">This chart illustrates the comparative effectiveness of different intervention strategies in averting infections per unit of cost, highlighting the efficiency gains from integrated approaches.</p>
                 </div>
             </div>
-
-            <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl mt-12 max-w-3xl mx-auto text-left">
-                <h4 class="text-2xl font-bold mb-4">Policy Scenario Generator</h4>
-                <p class="text-gray-600 mb-4">Describe a hypothetical pandemic scenario in Bangladesh, and our AI will generate a high-level policy recommendation based on the principles of behavior-aware optimal control.</p>
-                <textarea id="scenarioInput" class="w-full p-3 border border-gray-300 rounded-md mb-4 focus:ring-[#A5B493] focus:border-[#A5B493]" rows="4" placeholder="E.g., 'High vaccine hesitancy, limited budget, new highly transmissible variant.'"></textarea>
-                <button id="generatePolicyBtn" class="bg-[#D4A373] text-white px-6 py-3 rounded-lg shadow-md hover:bg-[#c29263] transition-colors">✨ Generate Policy Advice</button>
-                <div id="policyOutput" class="mt-6 p-4 bg-gray-100 rounded-lg text-gray-700 min-h-[100px] flex items-center justify-center">
-                    <p class="text-center text-gray-500">Your policy advice will appear here.</p>
-                </div>
-            </div>
         </section>
     </main>
 
@@ -594,44 +583,6 @@
             window.addEventListener('click', (event) => {
                 if (event.target === explanationModal) {
                     explanationModal.style.display = 'none';
-                }
-            });
-
-            const scenarioInput = document.getElementById('scenarioInput');
-            const generatePolicyBtn = document.getElementById('generatePolicyBtn');
-            const policyOutput = document.getElementById('policyOutput');
-
-            generatePolicyBtn.addEventListener('click', async () => {
-                const scenario = scenarioInput.value.trim();
-                if (!scenario) {
-                    policyOutput.innerHTML = '<p class="text-center text-red-500">Please enter a scenario.</p>';
-                    return;
-                }
-
-                policyOutput.innerHTML = '<div class="text-center text-gray-500">Generating advice...</div>';
-
-                try {
-                    let chatHistory = [];
-                    let prompt = `Given a pandemic scenario in Bangladesh: "${scenario}". Based on principles of behavior-aware optimal control, multi-compartment modeling, and cost-effectiveness, provide a high-level, actionable policy recommendation. Focus on balancing interventions, considering human behavior, and optimizing resources. Limit to 200 words.`;
-                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                    const payload = { contents: chatHistory };
-                    const apiKey = "";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        policyOutput.textContent = result.candidates[0].content.parts[0].text;
-                    } else {
-                        policyOutput.textContent = 'Could not generate policy advice.';
-                    }
-                } catch (error) {
-                    policyOutput.textContent = 'Error generating policy advice: ' + error.message;
                 }
             });
 
