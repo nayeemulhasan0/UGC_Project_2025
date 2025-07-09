@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Report: Behavior-Aware Optimal Control of Pandemics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Soothing Neutrals -->
+    <!-- Application Structure Plan: The application is structured as a narrative journey to guide the user from the general problem to the specific solution and its impact. It begins with 'The Core Challenge' to establish the "why." It then introduces 'The Three Pillars' of the solution at a high level. The 'Interactive Deep Dive' allows users to explore each pillar (Modeling, Behavior, Control) with dynamic visualizations and LLM-powered explanations, including a new Behavioral Insight Generator. This is followed by 'The 4-Phase Methodology,' a visual flowchart of the research process, and concludes with the 'Expected Impact,' which includes both a chart and an LLM-powered policy scenario generator, connecting the research to tangible outcomes for Bangladesh. This user-centric flow prioritizes understanding and exploration over the rigid structure of the source report. -->
+    <!-- Visualization & Content Choices: 
+        - Core Challenge: 3-column card layout (HTML/CSS) to quickly inform users of the key problems with traditional models.
+        - Three Pillars: Icon-and-text layout (HTML/CSS/Unicode) to organize the three core concepts of the project.
+        - Compartment Model: An interactive diagram (HTML/CSS) to organize and explain the complex model structure. Interaction: hover on compartments to see descriptions. Justification: Far more intuitive than a textual description for visualizing system flow.
+        - Vaccination Dilemma (Game Theory): A Donut Chart (Chart.js) to show the proportion/split of a social dilemma. Justification: Standard and instantly recognizable for this purpose.
+        - Optimal Control: A Line Chart (Chart.js) to show change over time, which is perfect for demonstrating a time-varying control function `u(t)`.
+        - Methodology: A styled flowchart (HTML/CSS) to organize a process. Justification: Visually engaging and clearly shows the research progression.
+        - Sensitivity Analysis: A Radar Chart (Chart.js) to compare the influence of multiple parameters on a single outcome. Justification: A standard and effective way to present multi-variable sensitivity.
+        - Cost-Effectiveness: A Horizontal Bar Chart (Chart.js) to compare and rank different policy strategies. Justification: Clear and effective for comparing the efficiency of interventions.
+        - LLM Explain Concept: Button triggers modal with LLM-generated text explanation. Interaction: Click button, read explanation, close modal. Justification: Provides on-demand simplification for complex topics.
+        - LLM Policy Scenario Generator: Textarea for input, button to trigger LLM, text output. Interaction: User inputs scenario, clicks button, reads generated policy advice. Justification: Demonstrates practical application of research principles.
+        - NEW: LLM Behavioral Insight Generator: Textarea for input, button to trigger LLM, text output. Interaction: User inputs behavioral challenge, clicks button, reads generated insights. Justification: Directly supports the "behavior-aware" aspect of the project by providing psychological insights.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            background-color: #F4F1EA;
+            color: #3E3E3E;
+            font-family: 'Inter', sans-serif;
+        }
+        .heading {
+            font-family: 'Lora', serif;
+            font-weight: 600;
+        }
+        .accent-color { color: #A5B493; }
+        .accent-bg { background-color: #A5B493; }
+        .highlight-color { color: #D4A373; }
+        .highlight-bg { background-color: #D4A373; }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 400px; }
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #A5B493;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .flow-step {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 2rem;
+        }
+        .flow-step::before {
+            content: attr(data-step);
+            position: absolute;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #D4A373;
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            z-index: 10;
+            border: 4px solid #F4F1EA;
+        }
+        .flow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            width: 2px;
+            height: 100%;
+            background-color: #d1d5db;
+        }
+
+        .model-compartment {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .model-compartment:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Pandemic Control Futures</h1>
+            <div class="hidden md:flex space-x-6 text-gray-600 font-medium">
+                <a href="#challenge" class="hover:text-[#A5B493]">The Challenge</a>
+                <a href="#deep-dive" class="hover:text-[#A5B493]">Deep Dive</a>
+                <a href="#methodology" class="hover:text-[#A5B493]">Methodology</a>
+                <a href="#impact" class="hover:text-[#A5B493]">Impact</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <section class="text-center mb-20">
+            <h2 class="text-4xl md:text-5xl heading mb-4 text-gray-800">Behavior-Aware Optimal Control of Pandemics</h2>
+            <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-600">
+                Moving beyond traditional models to create smarter, adaptive, and cost-effective public health strategies that account for one critical variable: human behavior.
+            </p>
+        </section>
+
+        <section id="challenge" class="mb-20">
+            <h3 class="text-3xl heading text-center mb-10">The Core Challenge: Why Old Models Aren't Enough</h3>
+             <p class="text-center max-w-3xl mx-auto mb-12 text-gray-600">Effective pandemic response requires understanding that disease spreads through a society, not just a biological system. Traditional models often miss key human factors, leading to strategies that are well-intentioned but suboptimal in the real world.</p>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-[#D4A373]">
+                    <span class="text-4xl">🔬</span>
+                    <h4 class="text-xl font-bold my-2">Population is Not Uniform</h4>
+                    <p class="text-gray-600">People have different risk levels, severities of illness, and access to care. A one-size-fits-all model fails to capture the granular dynamics that drive transmission in diverse communities.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-[#D4A373]">
+                    <span class="text-4xl">🤔</span>
+                    <h4 class="text-xl font-bold my-2">Behavior is Not Static</h4>
+                    <p class="text-gray-600">Individuals make choices based on perceived risk, cost, and social influence. Decisions like getting vaccinated or self-isolating are complex social dilemmas, not fixed parameters.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border-l-4 border-[#D4A373]">
+                    <span class="text-4xl">⚙️</span>
+                    <h4 class="text-xl font-bold my-2">Interventions Have Costs</h4>
+                    <p class="text-gray-600">Policies like lockdowns or mass testing have significant economic and social costs. The goal is not just to stop the virus, but to find the most efficient and sustainable way to do so.</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-20 border-t-2 border-gray-200">
+
+        <section id="deep-dive" class="mb-20">
+            <h3 class="text-3xl heading text-center mb-4">An Interactive Deep Dive into Our Approach</h3>
+            <p class="text-center max-w-3xl mx-auto mb-12 text-gray-600">Our research integrates three powerful fields to build a comprehensive framework. This approach allows us to model not just the pathogen, but the complex system of disease, human decision-making, and policy response. Click through the tabs below to explore each core component.</p>
+            
+            <div class="flex justify-center mb-8 space-x-2 md:space-x-4">
+                <button data-tab="model" class="tab-button active bg-white px-4 py-2 rounded-lg font-semibold shadow">1. Advanced Modeling</button>
+                <button data-tab="behavior" class="tab-button bg-white px-4 py-2 rounded-lg font-semibold shadow">2. Behavioral Dynamics</button>
+                <button data-tab="control" class="tab-button bg-white px-4 py-2 rounded-lg font-semibold shadow">3. Optimal Control</button>
+            </div>
+
+            <div id="tab-content" class="bg-white p-6 md:p-8 rounded-lg shadow-xl">
+                <div id="model-content" class="tab-pane">
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h4 class="text-2xl font-bold mb-4">Multi-Compartment Epidemic Models</h4>
+                            <p class="mb-4 text-gray-600">We use a high-dimensional model to sort the population into different groups, or "compartments," based on their health and behavioral state. This provides a detailed, realistic view of how a disease moves through a society. Hover over the compartments to learn more.</p>
+                            <div id="model-explanation" class="mt-4 p-4 accent-bg bg-opacity-10 rounded-lg text-gray-700 min-h-[80px]">
+                                <p class="font-semibold">Hover over a box to see its description.</p>
+                            </div>
+                            <button class="mt-6 bg-[#A5B493] text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#8e9f7d] transition-colors simplify-concept-btn" data-concept="Multi-Compartment Epidemic Models">✨ Simplify Concept</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+                            <div class="model-compartment p-2 bg-blue-100 text-blue-800 rounded-md" data-desc="Susceptible (S): Healthy individuals who can get infected.">Susceptible</div>
+                            <div class="model-compartment p-2 bg-green-100 text-green-800 rounded-md" data-desc="Vaccinated (V): Individuals with vaccine-induced immunity.">Vaccinated</div>
+                            <div class="model-compartment p-2 bg-yellow-100 text-yellow-800 rounded-md" data-desc="Exposed (E): Infected but not yet infectious. Can be high or low risk.">Exposed</div>
+                            <div class="model-compartment p-2 bg-red-100 text-red-800 rounded-md col-span-3" data-desc="Infected (I): Infectious individuals, categorized by severity (asymptomatic, mild, severe).">Infected</div>
+                            <div class="model-compartment p-2 bg-purple-100 text-purple-800 rounded-md col-span-2" data-desc="Treated (T): Individuals receiving medical care, categorized by severity.">Treated</div>
+                             <div class="model-compartment p-2 bg-gray-200 text-gray-800 rounded-md" data-desc="Recovered (R): Individuals who survived the infection and have natural immunity.">Recovered</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="behavior-content" class="tab-pane hidden">
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h4 class="text-2xl font-bold mb-4">Evolutionary Game Theory</h4>
+                            <p class="text-gray-600 mb-4">Why do some people vaccinate while others don't? Game theory helps us model these decisions. Vaccination is a "social dilemma": if enough people vaccinate, everyone is protected (herd immunity). This creates an incentive for some to "free-ride"—skip the vaccine cost but still get the benefit.</p>
+                            <p class="text-gray-600">This dynamic is crucial. Policies that ignore it can fail. For example, effective treatment might unintentionally reduce vaccination rates because people perceive the disease as less risky.</p>
+                            <button class="mt-6 bg-[#A5B493] text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#8e9f7d] transition-colors simplify-concept-btn" data-concept="Evolutionary Game Theory in Public Health">✨ Simplify Concept</button>
+                        </div>
+                        <div class="chart-container">
+                            <h5 class="text-center font-semibold mb-2">The Vaccination Dilemma</h5>
+                            <canvas id="vaccinationDilemmaChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 p-6 rounded-lg shadow-inner mt-8">
+                        <h4 class="text-xl font-bold mb-4">Behavioral Insight Generator</h4>
+                        <p class="text-gray-600 mb-4">Describe a public health behavioral challenge (e.g., "low mask compliance in markets"), and get potential psychological insights.</p>
+                        <textarea id="behavioralChallengeInput" class="w-full p-3 border border-gray-300 rounded-md mb-4 focus:ring-[#A5B493] focus:border-[#A5B493]" rows="3" placeholder="E.g., 'Reluctance to get booster shots after initial vaccination.'"></textarea>
+                        <button id="generateBehavioralInsightBtn" class="bg-[#D4A373] text-white px-6 py-3 rounded-lg shadow-md hover:bg-[#c29263] transition-colors">✨ Get Insight</button>
+                        <div id="behavioralInsightOutput" class="mt-6 p-4 bg-white rounded-lg text-gray-700 min-h-[80px] flex items-center justify-center">
+                            <p class="text-center text-gray-500">Insights will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="control-content" class="tab-pane hidden">
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                           <h4 class="text-2xl font-bold mb-4">Optimal Control Theory</h4>
+                            <p class="text-gray-600 mb-4">Optimal control is a mathematical tool to find the "best" way to apply interventions over time. "Best" means minimizing a combination of infections and the costs of control (economic, social).</p>
+                            <p class="text-gray-600">As the chart shows, the optimal strategy isn't a constant, full-throttle effort. It's an adaptive policy that changes intensity based on the state of the epidemic. This allows for sustainable, cost-effective management rather than a blunt, brute-force approach.</p>
+                            <button class="mt-6 bg-[#A5B493] text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#8e9f7d] transition-colors simplify-concept-btn" data-concept="Optimal Control Theory for Epidemics">✨ Simplify Concept</button>
+                        </div>
+                        <div class="chart-container">
+                            <h5 class="text-center font-semibold mb-2">Hypothetical Optimal Control Strategy</h5>
+                            <canvas id="optimalControlChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-20 border-t-2 border-gray-200">
+
+        <section id="methodology" class="mb-20">
+            <h3 class="text-3xl heading text-center mb-4">Our 4-Phase Research Methodology</h3>
+            <p class="text-center max-w-3xl mx-auto mb-12 text-gray-600">Our investigation follows a rigorous, four-phase process, moving from theoretical formulation to actionable, data-driven policy recommendations.</p>
+            <div class="max-w-3xl mx-auto">
+                <div class="flow-step" data-step="1">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold mb-2">Phase 1: Integrated Model Formulation</h4>
+                        <p class="text-gray-600">This phase involves the meticulous construction of the core mathematical model, integrating epidemiological dynamics, behavioral responses, and optimal control mechanisms. We develop a high-dimensional system of ordinary differential equations (ODEs) to represent the complex disease progression across various compartments (Susceptible, Vaccinated, Exposed, Infected, Treated, Recovered, Self-Protected). Evolutionary game theory is formally integrated to model individual decision-making (e.g., vaccination, self-protection, treatment seeking) based on perceived costs and benefits, and dynamic strategy updating rules. Finally, a time-dependent optimal control problem is defined, with an objective function to minimize cumulative infections and intervention costs, accounting for dynamic behavioral responses.</p>
+                    </div>
+                </div>
+                <div class="flow-step" data-step="2">
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold mb-2">Phase 2: Mathematical Analysis</h4>
+                        <p class="text-gray-600">This phase involves rigorous mathematical analysis of the formulated integrated system to understand its fundamental properties and derive conditions for optimal control. We derive the basic reproduction number ($R_0$) and the control reproduction number ($R_c$), establish the existence and uniqueness of disease-free and endemic equilibria, and perform stability analysis. Crucially, Pontryagin's Maximum Principle is applied to derive the necessary conditions for the existence of an optimal control solution, leading to a characterization of the optimal control profiles over time. This provides theoretical insights into the ideal strength and duration of each intervention.</p>
+                        <div class="chart-container h-64 max-h-64 mt-4">
+                            <h5 class="text-center font-semibold mb-2">Sensitivity of Epidemic Size to Parameters</h5>
+                            <canvas id="sensitivityAnalysisChart"></canvas>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">This radar chart shows the hypothetical influence of various parameters on the final epidemic size. A higher value indicates greater sensitivity, meaning changes in that parameter have a larger impact on how many people get infected.</p>
+                    </div>
+                </div>
+                <div class="flow-step" data-step="3">
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold mb-2">Phase 3: Numerical Simulation and Parameter Estimation</h4>
+                        <p class="text-gray-600">This phase focuses on translating the theoretical model into practical insights through computational methods, using real-world data. Epidemiological and behavioral data from past pandemics, with a focus on Bangladesh, will be systematically collected and used to calibrate the model parameters using advanced statistical methods like weighted nonlinear least squares. The coupled state and adjoint systems will be solved using iterative forward-backward sweep methods, potentially complemented by deep learning-based numerical algorithms. Comprehensive multi-layered policy scenarios will be designed and simulated under varying conditions to assess the robustness and adaptability of optimal strategies.</p>
+                    </div>
+                </div>
+                <div class="flow-step" data-step="4">
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold mb-2">Phase 4: Cost-Effectiveness Analysis and Policy Recommendation</h4>
+                        <p class="text-gray-600">The final phase involves a thorough economic evaluation of the simulated strategies and the translation of quantitative findings into actionable policy recommendations. A comprehensive cost-effectiveness analysis will be performed, calculating metrics such as Total Cost (TC), Total Averted (TA) infections, Infection Averted Ratio (IAR), and Incremental Cost-Effectiveness Ratio (ICER). These findings will inform concrete, evidence-based policy recommendations for pandemic management in Bangladesh, addressing optimal resource allocation, strategies to enhance public compliance, adaptive policy adjustments, and specific public health messaging.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <hr class="my-20 border-t-2 border-gray-200">
+
+        <section id="impact" class="text-center mb-20">
+            <h3 class="text-3xl heading mb-4">Expected Impact & Relevance for Bangladesh 🇧🇩</h3>
+            <p class="text-center max-w-3xl mx-auto mb-12 text-gray-600">For a densely populated and resource-constrained nation like Bangladesh, this research is not just academic—it's a roadmap to a more resilient and equitable public health future.</p>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="text-left">
+                    <div class="mb-6">
+                        <h4 class="text-xl font-bold">1. Smarter, Cost-Effective Policies</h4>
+                        <p class="text-gray-600">By identifying the most efficient mix of interventions, our framework helps allocate scarce resources for maximum impact, saving both lives and money.</p>
+                    </div>
+                    <div class="mb-6">
+                        <h4 class="text-xl font-bold">2. Enhanced Preparedness</h4>
+                        <p class="text-gray-600">The model acts as a "flight simulator" for pandemics, allowing policymakers to test strategies and anticipate behavioral responses before a crisis hits.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold">3. Culturally-Aware Communication</h4>
+                        <p class="text-gray-600">Understanding local risk perception and decision-making enables the design of public health campaigns that resonate, build trust, and foster compliance.</p>
+                    </div>
+                </div>
+                <div>
+                    <h5 class="text-center font-semibold mb-2">Cost-Effectiveness of Intervention Strategies</h5>
+                    <div class="chart-container">
+                        <canvas id="costEffectivenessChart"></canvas>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">This chart illustrates the comparative effectiveness of different intervention strategies in averting infections per unit of cost, highlighting the efficiency gains from integrated approaches.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl mt-12 max-w-3xl mx-auto text-left">
+                <h4 class="text-2xl font-bold mb-4">Policy Scenario Generator</h4>
+                <p class="text-gray-600 mb-4">Describe a hypothetical pandemic scenario in Bangladesh, and our AI will generate a high-level policy recommendation based on the principles of behavior-aware optimal control.</p>
+                <textarea id="scenarioInput" class="w-full p-3 border border-gray-300 rounded-md mb-4 focus:ring-[#A5B493] focus:border-[#A5B493]" rows="4" placeholder="E.g., 'High vaccine hesitancy, limited budget, new highly transmissible variant.'"></textarea>
+                <button id="generatePolicyBtn" class="bg-[#D4A373] text-white px-6 py-3 rounded-lg shadow-md hover:bg-[#c29263] transition-colors">✨ Generate Policy Advice</button>
+                <div id="policyOutput" class="mt-6 p-4 bg-gray-100 rounded-lg text-gray-700 min-h-[100px] flex items-center justify-center">
+                    <p class="text-center text-gray-500">Your policy advice will appear here.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="explanationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h4 id="modalTitle" class="text-2xl font-bold mb-4"></h4>
+            <p id="modalContent" class="text-gray-700"></p>
+            <div id="modalLoading" class="text-center text-gray-500 mt-4 hidden">Loading explanation...</div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>This interactive report summarizes the project proposal "Behavior-Aware Optimal Control of Pandemics" by synthesizing key concepts and expected outcomes for broader understanding.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const PALETTE = {
+                accent: '#A5B493',
+                highlight: '#D4A373',
+                text: '#3E3E3E',
+                lightText: '#888888',
+                bg: '#F4F1EA',
+                white: '#FFFFFF'
+            };
+
+            const tooltipTitleCallback = {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                return Array.isArray(label) ? label.join(' ') : label;
+                            }
+                        }
+                    }
+                }
+            };
+            
+            function wrapLabel(str, maxWidth = 16) {
+                if (!str || str.length <= maxWidth) return str;
+                const words = str.split(' ');
+                if (words.length === 1) return str;
+                const lines = [];
+                let currentLine = '';
+                for (const word of words) {
+                    if ((currentLine + word).length > maxWidth) {
+                        lines.push(currentLine.trim());
+                        currentLine = '';
+                    }
+                    currentLine += `${word} `;
+                }
+                lines.push(currentLine.trim());
+                return lines;
+            }
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tab = button.dataset.tab;
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabPanes.forEach(pane => {
+                        if (pane.id === `${tab}-content`) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            const compartmentDivs = document.querySelectorAll('.model-compartment');
+            const explanationDiv = document.getElementById('model-explanation');
+            const defaultExplanation = explanationDiv.innerHTML;
+
+            compartmentDivs.forEach(div => {
+                div.addEventListener('mouseenter', () => {
+                    explanationDiv.innerHTML = `<p class="font-semibold">${div.innerText}:</p><p>${div.dataset.desc}</p>`;
+                });
+                div.addEventListener('mouseleave', () => {
+                    explanationDiv.innerHTML = defaultExplanation;
+                });
+            });
+
+
+            new Chart(document.getElementById('vaccinationDilemmaChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Vaccinators', 'Free-Riders'],
+                    datasets: [{
+                        data: [65, 35],
+                        backgroundColor: [PALETTE.accent, PALETTE.highlight],
+                        borderColor: PALETTE.white,
+                        borderWidth: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: tooltipTitleCallback.plugins.tooltip
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            new Chart(document.getElementById('optimalControlChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Start', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'End'],
+                    datasets: [{
+                        label: 'Optimal Intervention Intensity',
+                        data: [0.8, 0.9, 0.75, 0.6, 0.4, 0.25],
+                        borderColor: PALETTE.accent,
+                        backgroundColor: 'rgba(165, 180, 147, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    ...tooltipTitleCallback,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            title: { display: true, text: 'Control Intensity (0=None, 1=Max)' }
+                        }
+                    }
+                }
+            });
+
+            const sensitivityLabels = [
+                'Transmission Rate', 'Risk Perception', 'Vaccine Efficacy',
+                'Isolation Efficacy', 'Vaccine Cost', 'Treatment Cost'
+            ].map(l => wrapLabel(l));
+            
+            new Chart(document.getElementById('sensitivityAnalysisChart'), {
+                type: 'radar',
+                data: {
+                    labels: sensitivityLabels,
+                    datasets: [{
+                        label: 'Influence on Final Epidemic Size',
+                        data: [0.95, 0.85, 0.7, 0.65, 0.4, 0.3],
+                        backgroundColor: 'rgba(212, 163, 115, 0.3)',
+                        borderColor: PALETTE.highlight,
+                        pointBackgroundColor: PALETTE.highlight,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    ...tooltipTitleCallback,
+                    scales: {
+                        r: {
+                            suggestedMin: 0,
+                            suggestedMax: 1,
+                            pointLabels: { font: { size: 11 } },
+                            ticks: { backdropColor: 'transparent', color: PALETTE.lightText }
+                        }
+                    }
+                }
+            });
+
+            const costEffectivenessLabels = [
+                'Strategy A (Isolation)', 'Strategy B (Isolation+Detection)', 'Strategy C (All Controls)'
+            ].map(l => wrapLabel(l));
+            
+            new Chart(document.getElementById('costEffectivenessChart'), {
+                type: 'bar',
+                data: {
+                    labels: costEffectivenessLabels,
+                    datasets: [{
+                        label: 'Infections Averted per Unit Cost',
+                        data: [150, 280, 410],
+                        backgroundColor: [PALETTE.highlight, PALETTE.accent, '#7aa0b2'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    ...tooltipTitleCallback,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Effectiveness Score' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            const explanationModal = document.getElementById('explanationModal');
+            const closeButton = document.querySelector('.close-button');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalLoading = document.getElementById('modalLoading');
+
+            document.querySelectorAll('.simplify-concept-btn').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const concept = button.dataset.concept;
+                    modalTitle.textContent = concept;
+                    modalContent.textContent = '';
+                    modalLoading.classList.remove('hidden');
+                    explanationModal.style.display = 'flex';
+
+                    try {
+                        let chatHistory = [];
+                        let prompt = `Explain "${concept}" in simple terms, suitable for a non-expert audience, in about 150 words.`;
+                        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                        const payload = { contents: chatHistory };
+                        const apiKey = "";
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            modalContent.textContent = result.candidates[0].content.parts[0].text;
+                        } else {
+                            modalContent.textContent = 'Could not generate explanation.';
+                        }
+                    } catch (error) {
+                        modalContent.textContent = 'Error generating explanation: ' + error.message;
+                    } finally {
+                        modalLoading.classList.add('hidden');
+                    }
+                });
+            });
+
+            closeButton.addEventListener('click', () => {
+                explanationModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === explanationModal) {
+                    explanationModal.style.display = 'none';
+                }
+            });
+
+            const scenarioInput = document.getElementById('scenarioInput');
+            const generatePolicyBtn = document.getElementById('generatePolicyBtn');
+            const policyOutput = document.getElementById('policyOutput');
+
+            generatePolicyBtn.addEventListener('click', async () => {
+                const scenario = scenarioInput.value.trim();
+                if (!scenario) {
+                    policyOutput.innerHTML = '<p class="text-center text-red-500">Please enter a scenario.</p>';
+                    return;
+                }
+
+                policyOutput.innerHTML = '<div class="text-center text-gray-500">Generating advice...</div>';
+
+                try {
+                    let chatHistory = [];
+                    let prompt = `Given a pandemic scenario in Bangladesh: "${scenario}". Based on principles of behavior-aware optimal control, multi-compartment modeling, and cost-effectiveness, provide a high-level, actionable policy recommendation. Focus on balancing interventions, considering human behavior, and optimizing resources. Limit to 200 words.`;
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        policyOutput.textContent = result.candidates[0].content.parts[0].text;
+                    } else {
+                        policyOutput.textContent = 'Could not generate policy advice.';
+                    }
+                } catch (error) {
+                    policyOutput.textContent = 'Error generating policy advice: ' + error.message;
+                }
+            });
+
+            const behavioralChallengeInput = document.getElementById('behavioralChallengeInput');
+            const generateBehavioralInsightBtn = document.getElementById('generateBehavioralInsightBtn');
+            const behavioralInsightOutput = document.getElementById('behavioralInsightOutput');
+
+            generateBehavioralInsightBtn.addEventListener('click', async () => {
+                const challenge = behavioralChallengeInput.value.trim();
+                if (!challenge) {
+                    behavioralInsightOutput.innerHTML = '<p class="text-center text-red-500">Please describe a behavioral challenge.</p>';
+                    return;
+                }
+
+                behavioralInsightOutput.innerHTML = '<div class="text-center text-gray-500">Generating insights...</div>';
+
+                try {
+                    let chatHistory = [];
+                    let prompt = `For the public health behavioral challenge: "${challenge}", provide potential underlying psychological or social reasons. Focus on factors relevant to a pandemic context (e.g., risk perception, trust, social norms, economic constraints). Limit to 150 words.`;
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        behavioralInsightOutput.textContent = result.candidates[0].content.parts[0].text;
+                    } else {
+                        behavioralInsightOutput.textContent = 'Could not generate behavioral insight.';
+                    }
+                } catch (error) {
+                    behavioralInsightOutput.textContent = 'Error generating insight: ' + error.message;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
