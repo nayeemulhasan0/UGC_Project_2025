@@ -249,7 +249,7 @@
                         <div>
                            <h4 class="text-2xl font-bold mb-4">Optimal Control Theory</h4>
                             <p class="text-gray-600 mb-4">Optimal control is a mathematical tool to find the "best" way to apply interventions over time. "Best" means minimizing a combination of infections and the costs of control (economic, social).</p>
-                            <p class="text-gray-600">As the chart shows, the optimal strategy isn't a constant, full-throttle effort. It's an adaptive policy that changes intensity based on the state of the epidemic. This allows for sustainable, cost-effective management rather than a blunt, brute-force approach.</p>
+                            <p class="text-gray-600">As the chart shows, the optimal strategy isn't a constant, full-throttle effort. It's an adaptive policy that changes intensity based on the state of the epidemic. This allows for sustainable, cost-effective management rather rather than a blunt, brute-force approach.</p>
                             <button class="mt-6 bg-[#A5B493] text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#8e9f7d] transition-colors simplify-concept-btn" data-concept="Optimal Control Theory for Epidemics">✨ Simplify Concept</button>
                         </div>
                         <div class="chart-container">
@@ -277,7 +277,7 @@
                      <div class="bg-white p-6 rounded-lg shadow-md">
                         <h4 class="text-xl font-bold mb-2">Phase 2: Mathematical Analysis</h4>
                         <p class="text-gray-600">This phase involves rigorous mathematical analysis of the formulated integrated system to understand its fundamental properties and derive conditions for optimal control. We derive the basic reproduction number ($R_0$) and the control reproduction number ($R_c$), establish the existence and uniqueness of disease-free and endemic equilibria, and perform stability analysis. Crucially, Pontryagin's Maximum Principle is applied to derive the necessary conditions for the existence of an optimal control solution, leading to a characterization of the optimal control profiles over time. This provides theoretical insights into the ideal strength and duration of each intervention.</p>
-                        <div class="chart-container h-64 max-h-64 mt-4">
+                        <div class="chart-container mt-4 mb-6">
                             <h5 class="text-center font-semibold mb-2">Sensitivity of Epidemic Size to Parameters</h5>
                             <canvas id="sensitivityAnalysisChart"></canvas>
                         </div>
@@ -481,7 +481,7 @@
                     labels: sensitivityLabels,
                     datasets: [{
                         label: 'Influence on Final Epidemic Size',
-                        data: [0.95, 0.85, 0.7, 0.65, 0.4, 0.3],
+                        data: [0.3, 0.85, 0.7, 0.65, 0.4, 0.3],
                         backgroundColor: 'rgba(212, 163, 115, 0.3)',
                         borderColor: PALETTE.highlight,
                         pointBackgroundColor: PALETTE.highlight,
